@@ -1,5 +1,6 @@
 ﻿using GameFramework.Fsm;
 using GameFramework.Procedure;
+using GameFramework.Event;
 using UnityGameFramework.Runtime;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
@@ -40,9 +41,12 @@ namespace GameCollection
             // 此字典文件记录了资源更新前使用的各种语言的字符串，会随 App 一起发布，故不可更新。
             GameEntry.BuiltinData.InitDefaultDictionary();
         }
-        protected override void OnEnter(ProcedureOwner procedureOwner)
+        protected override void OnUpdate(ProcedureOwner procedureOwner, float elapseSeconds, float realElapseSeconds)
         {
-            base.OnEnter(procedureOwner);
+            base.OnUpdate(procedureOwner, elapseSeconds, realElapseSeconds);
+
+            //检查版本更新
+            ChangeState(procedureOwner, typeof(ProcedureCheckVersion));
         }
 
         private void InitLanguageSettings()
@@ -81,6 +85,8 @@ namespace GameCollection
     /// </summary>
     public class ProcedureCheckVersion : ProcedureBase
     {
+        private bool m_InitResourceComplete = false;
+
         public override bool UseNativeDialog
         {
             get
@@ -88,15 +94,27 @@ namespace GameCollection
                 return false;
             }
         }
-        protected override void OnInit(ProcedureOwner procedureOwner)
-        {
-            base.OnInit(procedureOwner);
-        }
 
         protected override void OnEnter(ProcedureOwner procedureOwner)
         {
             base.OnEnter(procedureOwner);
+
+            m_InitResourceComplete = false;
+
+            GameEntry.Event.Subscribe(WebRequestSuccessEventArgs.EventId, OnWebRequestSuccess);
+            GameEntry.Event.Subscribe(WebRequestFailureEventArgs.EventId, OnWebRequestFailure);
+
+            RequestVersion();
         }
+
+        private void OnWebRequestSuccess(object sender, GameEventArgs e)
+        { }
+
+        private void OnWebRequestFailure(object sender, GameEventArgs e)
+        { }
+
+        private void RequestVersion()
+        { }
     }
 
 
